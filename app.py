@@ -61,3 +61,15 @@ def register():
      return render_template('register.html',path='./static/css/styles.min.css')
 
 app.run(debug=True)
+
+@app.route("/registration",methods=["POST"])
+def registration():
+    fname=request.form.get("first_name")
+    lname=request.form.get("last_name")
+    email=request.form.get("email")
+    password=request.form.get("password")
+    print(email+" , "+fname+" , "+lname)
+    # print(email+" , "+fname+" , "+lname, file=sys.stderr)
+    return email+" , "+fname+" , "+lname
+
+app.run(debug=True)
