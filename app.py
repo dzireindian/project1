@@ -5,8 +5,9 @@ from flask import Flask,render_template,request,session
 from flask_session import Session
 
 # from flask.ext.session import Session
-from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import * #create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import * #scoped_session, sessionmaker
 
 from werkzeug.debug import DebuggedApplication
 
@@ -48,7 +49,15 @@ Session(app)
 engine = create_engine(os.getenv("DATABASE_URL"))
 # engine = create_engine("postgres://lcrwacesatfmjm:7775a710b16c87a20154bc9df86aceb643b9cc6afbb29c781bc068f25f19df21@ec2-54-247-71-245.eu-west-1.compute.amazonaws.com:5432/d6r9sefsl5m5i3")
 db = scoped_session(sessionmaker(bind=engine))
+print(engine.table_names(),file=sys.stdout)
 
+Base = declarative_base()
+class Users(Base):
+    __tablename__ = "users"
+    email = Column(String, primary_key=True, nullable=False)
+    fname = Column(String)
+    lname = Column(String)
+    pwrd = Column(String)
 
 @app.route("/")
 def index():
@@ -58,7 +67,10 @@ app.run(debug=True)
 
 @app.route("/register")
 def register():
-     return render_template('register.html',path='./static/css/styles.min.css')
+    if not engine.dialect.has_table(engine, "users"):  # If table don't exist, Create.
+        # db_engine = connect_db()
+        Users.__table__.create(bind=engine, checkfirst=True)
+    return render_template('register.html',path='./static/css/styles.min.css')
 
 app.run(debug=True)
 
@@ -68,8 +80,9 @@ def registration():
     lname=request.form.get("last_name")
     email=request.form.get("email")
     password=request.form.get("password")
-    print(email+" , "+fname+" , "+lname)
-    # print(email+" , "+fname+" , "+lname, file=sys.stderr)
+    print(email+" , "+fname+" , "+lname,file=sys.stdout)
+    print(email+" , "+fname+" , "+lname, file=sys.stderr)
+
     return email+" , "+fname+" , "+lname
 
 app.run(debug=True)
