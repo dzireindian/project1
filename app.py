@@ -1,11 +1,13 @@
 import os
 import sys
 
-from flask import Flask,render_template,request,session
+from flask import Flask,render_template,request,session,redirect,url_for,flash
 from flask_session import Session
+from datetime import datetime
 
 # from flask.ext.session import Session
 from sqlalchemy import * #create_engine
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import * #scoped_session, sessionmaker
 
@@ -43,46 +45,148 @@ if not os.getenv("DATABASE_URL"):
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config['development'] = True
+app.config['SECRET_KEY'] = '#KR#'
+# SESSION_TYPE = 'redis'
+# app.config.from_object(__name__)
 Session(app)
-
+user = ""
 # Set up database
 engine = create_engine(os.getenv("DATABASE_URL"))
 # engine = create_engine("postgres://lcrwacesatfmjm:7775a710b16c87a20154bc9df86aceb643b9cc6afbb29c781bc068f25f19df21@ec2-54-247-71-245.eu-west-1.compute.amazonaws.com:5432/d6r9sefsl5m5i3")
-db = scoped_session(sessionmaker(bind=engine))
+# db = scoped_session(sessionmaker(bind=engine))
 print(engine.table_names(),file=sys.stdout)
 
 Base = declarative_base()
 class Users(Base):
-    __tablename__ = "users"
+    __tablename__ = "USERS"
     email = Column(String, primary_key=True, nullable=False)
     fname = Column(String)
     lname = Column(String)
     pwrd = Column(String)
+    date = Column(DateTime)
 
 @app.route("/")
 def index():
     return "Project 1: TODO"
 
-app.run(debug=True)
+@app.route("/home")
+def userHome():
+    if 'email' in session:
+        return render_template('index.html', email=session['email'])
+    return render_template('layout.html',email = None)
 
 @app.route("/register")
 def register():
-    if not engine.dialect.has_table(engine, "users"):  # If table don't exist, Create.
+    if not engine.dialect.has_table(engine, "USERS"):  # If table don't exist, Create.
         # db_engine = connect_db()
+        # path='./static/css/styles.min.css'
         Users.__table__.create(bind=engine, checkfirst=True)
-    return render_template('register.html',path='./static/css/styles.min.css')
+    if "email" in session:
+        print("session present while registrering")
+        return render_template('register.html',email = session['email'])
+    return render_template('register.html',email=None)
 
-app.run(debug=True)
+
 
 @app.route("/registration",methods=["POST"])
 def registration():
-    fname=request.form.get("first_name")
-    lname=request.form.get("last_name")
-    email=request.form.get("email")
-    password=request.form.get("password")
-    print(email+" , "+fname+" , "+lname,file=sys.stdout)
-    print(email+" , "+fname+" , "+lname, file=sys.stderr)
+    rfname=request.form.get("first_name")
+    rlname=request.form.get("last_name")
+    remail=request.form.get("email")
+    rpassword=request.form.get("password")
+    rcpassword=request.form.get("confirm_password")
 
-    return email+" , "+fname+" , "+lname
 
-app.run(debug=True)
+    if "login" in request.form:
+        try:
+            print('in login')
+            db = scoped_session(sessionmaker(bind=engine))
+            query = db.query(Users).filter(Users.email == remail)
+            name = query.first()
+            # print(name.email)
+            if name is not None and name.email == remail and name.pwrd == rpassword:
+                print('session created')
+                session['email'] = name.email
+                user = name.email
+                # s = session['email']
+                return render_template('index.html', email=user)
+            elif name is not None and name.email == remail and name.pwrd != rpassword:
+                print('Incorrect password, try again')
+                # session['email'] = name.email
+                flash('Incorrect password, try again')
+                # s = session['email']
+                return render_template('register.html', email=None)
+            else:
+                print('User not registered,register before you login')
+                flash('User not registered,register before you login')
+                # return redirect(url_for('register'))
+                return render_template('register.html',email=None)
+        except SQLAlchemyError as e:
+            print(e)
+            return render_template('fail.html',path='./static/css/styles.min.css')
+        finally:
+            db.close()
+    else:
+        print("in register method")
+        if rpassword == rcpassword:
+            # data = {'a': 5566, 'b': 9527, 'c': 183}
+            try:
+                db = scoped_session(sessionmaker(bind=engine))
+                query = db.query(Users).filter(Users.email == remail)
+                print(remail)
+                if query.first() != None:
+                    print('User already exists')
+                    flash('User already exists')
+                    return render_template('register.html', email=None)
+                else:
+                    print('Inserting user')
+                    now = datetime.now()
+                    db = scoped_session(sessionmaker(bind=engine))
+                    row = Users(email=remail,fname=rfname,lname=rlname,pwrd=rpassword,date=now)
+                    db.add(row)
+                    db.commit()
+                    return render_template('index.html', email=None)
+
+            except SQLAlchemyError as e:
+                print(e)
+                return render_template('fail.html',path='./static/css/styles.min.css')
+            finally:
+                db.close()
+                # return render_template('success.html',path='./static/css/styles.min.css')
+        else:
+            print("confirmation does not match")
+            flash('confirmation password does not match with the Entered password, Try again')
+            return render_template('register.html', email=None)
+            # return redirect(url_for('register'))
+
+    #     print(remail+" , "+rfname+" , "+rlname,file=sys.stdout)
+    #     print(remail+" , "+rfname+" , "+rlname, file=sys.stderr)
+    #
+    # return remail+" , "+rfname+" , "+rlname
+
+@app.route("/login",methods=["POST"])
+def login():
+    return render_template('login.html',path='./static/css/styles.min.css')
+
+@app.route("/login_form")
+def login_form():
+    session.pop('email', None)
+    return render_template('index.html',path='./static/css/styles.min.css', email=None)
+
+@app.route("/main")
+def data():
+    try:
+        db = scoped_session(sessionmaker(bind=engine))
+        query = db.query(Users).order_by(Users.date)
+        return render_template('main.html',row = query.all())
+    except SQLAlchemyError as e:
+        print(e)
+        return render_template('fail.html',path='./static/css/styles.min.css')
+    finally:
+        db.close()
+
+
+if __name__ == "__main__":
+    # app.secret_key = "#KR#"
+    app.run(debug=True)
+    # Session(app)
