@@ -68,6 +68,11 @@ class Users(Base):
     pwrd = Column(String)
     date = Column(DateTime)
 
+class Admin(Base):
+    __tablename__ = "ADMIN"
+    email = Column(String,primary_key=True,nullable=False)
+    admin = Column(Boolean)
+
 class Reviews(Base):
     __tablename__ = 'REVIEWS'
     id = Column(Integer,primary_key=True,autoincrement=True)
@@ -87,7 +92,7 @@ class Books(Base):
 
 @app.route("/")
 def index():
-    return redirect(url_for('home'))
+    return render_template('index.html',email = None)
 
 @app.route("/home")
 def home():
@@ -97,10 +102,12 @@ def home():
 
 @app.route("/register")
 def register():
-    if not engine.dialect.has_table(engine, "USERS"):  # If table don't exist, Create.
-        # db_engine = connect_db()
-        # path='./static/css/styles.min.css'
+    if not engine.dialect.has_table(engine, "USERS"):
         Users.__table__.create(bind=engine, checkfirst=True)
+
+    if not engine.dialect.has_table(engine, "ADMIN"):
+        Admin.__table__.create(bind=engine, checkfirst=True)
+
     if "email" in session:
         print("session present while registrering")
         return render_template('register.html',email = session['email'])
@@ -116,7 +123,6 @@ def registration():
     rpassword=request.form.get("password")
     rcpassword=request.form.get("confirm_password")
 
-
     if "login" in request.form:
         try:
             print('in login')
@@ -129,7 +135,12 @@ def registration():
                 session['email'] = name.email
                 session['fname'] = name.fname
                 user = name.email
-                # s = session['email']
+                query = db.query(Admin).filter(Admin.email == remail)
+                name = query.first()
+
+                if name is not None:
+                    return redirect(url_for('main', email=user))
+
                 return render_template('search.html', email=user)
             elif name is not None and name.email == remail and name.pwrd != rpassword:
                 print('Incorrect password, try again')
@@ -354,40 +365,45 @@ def search():
 
 @app.route("/searchtest")
 def searchtest():
-    return render_template('search.html',email=session['email'])
+    if 'email' in session:
+        return render_template('search.html', email=session['email'])
+    return render_template('index.html',email=None)
 
 @app.route("/booksearch/<string:isbn>")
 def booksearch(isbn):
-    db = scoped_session(sessionmaker(bind=engine))
-    try:
-        if not engine.dialect.has_table(engine, "REVIEWS"):  # If table don't exist, Create.
-            Reviews.__table__.create(bind=engine, checkfirst=True)
-        # query = db.query(Books).filter(Books.isbn==isbn)
-        query = db.query(Books).filter(Books.isbn==isbn)
-        if query != None:
-            # r = query.all()
-            # print(r)
-            # for book in r:
-            #     print(f"added{book.title} with number {book.isbn} written by {book.author} published in the year {book.year}")
-            booksquery = db.query(Reviews).filter(Reviews.isbn==isbn)
-            print(booksquery)
-            res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "aLvwXAjKk7bi8mYKzi0mw", "isbns": isbn})
-            data = res.text
-            parsed = json.loads(data)
-            print(parsed)
-            res = {}
-            for i in parsed:
-                for j in (parsed[i]):
-                    res = j
-            return render_template('bookdetails.html',book = query.first(),email=session['email'],res = res,isbn=isbn,review=booksquery.all())
-        else :
-            flash("there are no books available with the specified details,try with more specific details")
-            return render_template('search.html',email=session['email'])
-    except SQLAlchemyError as e:
-        print(e)
-        return render_template('fail.html',path='./static/css/styles.min.css')
-    finally:
-        db.close()
+    if 'email' in session:
+        db = scoped_session(sessionmaker(bind=engine))
+        try:
+            if not engine.dialect.has_table(engine, "REVIEWS"):  # If table don't exist, Create.
+                Reviews.__table__.create(bind=engine, checkfirst=True)
+            # query = db.query(Books).filter(Books.isbn==isbn)
+            query = db.query(Books).filter(Books.isbn==isbn)
+            if query != None:
+                # r = query.all()
+                # print(r)
+                # for book in r:
+                #     print(f"added{book.title} with number {book.isbn} written by {book.author} published in the year {book.year}")
+                booksquery = db.query(Reviews).filter(Reviews.isbn==isbn)
+                print(booksquery)
+                res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "aLvwXAjKk7bi8mYKzi0mw", "isbns": isbn})
+                data = res.text
+                parsed = json.loads(data)
+                print(parsed)
+                res = {}
+                for i in parsed:
+                    for j in (parsed[i]):
+                        res = j
+                return render_template('bookdetails.html',book = query.first(),email=session['email'],res = res,isbn=isbn,review=booksquery.all())
+            else :
+                flash("there are no books available with the specified details,try with more specific details")
+                return render_template('search.html',email=session['email'])
+        except SQLAlchemyError as e:
+            print(e)
+            return render_template('fail.html',path='./static/css/styles.min.css')
+        finally:
+            db.close()
+    else:
+        return render_template('index.html', email=None)
 
 @app.route("/review/<string:isbn>",methods=["POST"])
 def review(isbn):
@@ -475,16 +491,19 @@ def login_form():
     return render_template('index.html',path='./static/css/styles.min.css', email=None)
 
 @app.route("/main")
-def data():
-    try:
-        db = scoped_session(sessionmaker(bind=engine))
-        query = db.query(Users).order_by(Users.date)
-        return render_template('main.html',row = query.all())
-    except SQLAlchemyError as e:
-        print(e)
-        return render_template('fail.html',path='./static/css/styles.min.css')
-    finally:
-        db.close()
+def main():
+    if 'email' in session:
+        try:
+            db = scoped_session(sessionmaker(bind=engine))
+            query = db.query(Users).order_by(Users.date)
+            return render_template('main.html',row = query.all())
+        except SQLAlchemyError as e:
+            print(e)
+            return render_template('fail.html',path='./static/css/styles.min.css')
+        finally:
+            db.close()
+    else:
+        return render_template('index.html', email=None)
 
 
 if __name__ == "__main__":
