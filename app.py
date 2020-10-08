@@ -15,28 +15,8 @@ from sqlalchemy.orm import * #scoped_session, sessionmaker
 
 from werkzeug.debug import DebuggedApplication
 
-# def load_config(mode):
-#     """Load config."""
-#     try:
-#         if mode == 'PRODUCTION':
-#             from .production import ProductionConfig
-#             return ProductionConfig
-#         elif mode == 'TESTING':
-#             from .testing import TestingConfig
-#             return TestingConfig
-#         else:
-#             from .development import DevelopmentConfig
-#             return DevelopmentConfig
-#     except ImportError:
-#         from .default import Config
-#         return Config
 
-# config = load_config(mode=os.environ.get('FLASK_ENV'))
 app = Flask(__name__)
-# app.debug = True
-# app.config.from_object(os.environ.get('FLASK_ENV'))
-# if app.debug:
-#     app.wsgi_app = DebuggedApplication(app.wsgi_app, evalex=True)
 
 
 # Check for environment variable
@@ -147,12 +127,12 @@ def registration():
                 # session['email'] = name.email
                 flash('Incorrect password, try again')
                 # s = session['email']
-                return render_template('register.html', email=None)
+                return redirect(url_for('register'))
             else:
                 print('User not registered,register before you login')
                 flash('User not registered,register before you login')
                 # return redirect(url_for('register'))
-                return render_template('register.html',email=None)
+                return redirect(url_for('register'))
         except SQLAlchemyError as e:
             print(e)
             return render_template('fail.html',path='./static/css/styles.min.css')
@@ -169,7 +149,7 @@ def registration():
                 if query.first() != None:
                     print('User already exists')
                     flash('User already exists')
-                    return render_template('register.html', email=None)
+                    return redirect(url_for('register'))
                 else:
                     print('Inserting user')
                     now = datetime.now()
@@ -188,7 +168,7 @@ def registration():
         else:
             print("confirmation does not match")
             flash('confirmation password does not match with the Entered password, Try again')
-            return render_template('register.html', email=None)
+            return redirect(url_for('register'))
             # return redirect(url_for('register'))
 
     #     print(remail+" , "+rfname+" , "+rlname,file=sys.stdout)
