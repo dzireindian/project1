@@ -87,6 +87,91 @@ else
 
 });
 
+
+document.getElementById('searchBooks').addEventListener('click', e =>{
+  let search = document.getElementById('search').value
+  console.log(search);
+  let request = new XMLHttpRequest();
+  var path = "/api/searchapi/"+search+"/"
+  console.log(path);
+  request.open("GET", path);
+  request.setRequestHeader("Content-Type", "application/json");
+  request.send(null);
+
+  request.onload = () => {
+    var data = JSON.parse(request.responseText);
+    if (request.status === 200) {
+      console.log("request recieved");
+      console.log(data);
+
+      document.getElementById("dynamic").innerHTML = data["content"];
+    } else {
+      document.getElementById("dynamic").innerHTML = data["content"];
+    }
+  };
+
+  // event.preventDefault();
+  return false;
+});
+
+function bookdetails(isbn)
+{
+  console.log(typeof isbn);
+  let search = isbn.toString();
+  console.log(typeof search);
+  let request = new XMLHttpRequest();
+  var path = "/api/booksapi/"+search+"/"
+  console.log(path);
+  request.open("GET", path);
+  request.setRequestHeader("Content-Type", "application/json");
+  request.send();
+
+  request.onload = () => {
+    var data = JSON.parse(request.responseText);
+    if (request.status === 200) {
+      console.log("request recieved");
+      console.log(data);
+
+      document.getElementById("dynamic").innerHTML = data["content"];
+    }
+  }
+}
+
+function review(isbn){
+  var ele = document.getElementsByName('rating');
+  rating = "" ;
+
+  for(i = 0; i < ele.length; i++) {
+      if(ele[i].checked)
+      rating = ele[i].value;
+  }
+
+  reviews = document.getElementById('Review').value;
+  email = document.getElementById('EmailAccess').innerHTML;
+  fname = document.getElementById('Fname').innerHTML;
+
+
+  console.log(typeof isbn);
+  let search = isbn.toString();
+  console.log(typeof search);
+  let request = new XMLHttpRequest();
+  var path = "/api/reviewsapi/"+search+"/"+reviews+"/"+rating+"/"+email+"/"+fname+"/";
+  console.log(path);
+  request.open("GET", path);
+  request.setRequestHeader("Content-Type", "application/json");
+  request.send();
+
+  request.onload = () => {
+    var data = JSON.parse(request.responseText);
+    if (request.status === 200) {
+      console.log("request recieved");
+      console.log(data);
+
+      document.getElementById("dynamic").innerHTML = data["content"];
+    }
+  }
+}
+
 // document.addEventListener('submit', e =>{
 //   let mail = document.forms["myForm"]["email"].value;
 //   let pwrd = document.forms["myForm"]["password"].value;
