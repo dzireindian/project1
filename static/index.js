@@ -1,7 +1,6 @@
 
 // $(document).ready(function() {
 
-function register_validation(){
 document.getElementById('register').addEventListener('click', e =>{
   let mail = document.forms["myForm"]["email"].value;
   let pwrd = document.forms["myForm"]["password"].value;
@@ -46,10 +45,7 @@ else
 
 });
 
-}
 
-
-function login_validation(){
 document.getElementById('login').addEventListener('click', e =>{
   let mail = document.forms["myForm"]["email"].value;
   let pwrd = document.forms["myForm"]["password"].value;
@@ -94,7 +90,6 @@ else
 
 });
 
-}
 
 function search_books(){
 document.getElementById('searchBooks').addEventListener('click', e =>{
@@ -126,9 +121,15 @@ document.getElementById('searchBooks').addEventListener('click', e =>{
 
 function bookdetails(isbn)
 {
-  console.log(typeof isbn);
+  console.log("isbn = "+isbn);
   let search = isbn.toString();
-  console.log(typeof search);
+  if (search.length != 10){
+    while(search.length == 10)
+    {
+      search = "0"+search;
+    }
+  }
+  console.log("isbn after = "+search);
   let request = new XMLHttpRequest();
   var path = "/api/booksapi/"+search+"/"
   console.log(path);

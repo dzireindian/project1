@@ -246,6 +246,11 @@ def searchtest():
 @app.route("/api/booksapi/<string:isbn>/",methods=["POST","GET"])
 def booksearch(isbn):
     if 'email' in session:
+        print('length of isbn',len(isbn))
+        if len(isbn)!=10:
+            isbn = "0"+isbn
+            booksearch(isbn)
+        print("isbn = ",isbn)
         db = scoped_session(sessionmaker(bind=engine))
         html = ''
         try:
@@ -263,16 +268,25 @@ def booksearch(isbn):
                 res = requests.get("https://www.goodreads.com/book/review_counts.json", params={"key": "aLvwXAjKk7bi8mYKzi0mw", "isbns": isbn})
                 data = res.text
                 print(data)
-                parsed = json.loads(data)
+
                 # parsed = res.json()
-                print(parsed)
+                # print(parsed)
                 res = {}
-                for i in parsed:
-                    for j in (parsed[i]):
-                        res = j
+                if data != 'No books match those ISBNs.':
+                    parsed = json.loads(data)
+                    print(parsed)
+                    for i in parsed:
+                        for j in (parsed[i]):
+                            res = j
+                else:
+                    res['isbn'] = "_"
+                    res["average_rating"]="_"
+                    res["reviews_count"]="_"
+
                 print('res :')
                 print(res)
                 book = query.first()
+                # print('length = ',len(book))
 
 
                 html =  '''
@@ -370,7 +384,7 @@ def booksearch(isbn):
 
                     else :
                         html = "<p>there are no books available for this book</p>"
-
+                print('returning html')
                 html = json.dumps({'content':html})
                 return html,200
 
