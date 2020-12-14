@@ -1,4 +1,7 @@
 
+// $(document).ready(function() {
+
+function register_validation(){
 document.getElementById('register').addEventListener('click', e =>{
   let mail = document.forms["myForm"]["email"].value;
   let pwrd = document.forms["myForm"]["password"].value;
@@ -43,6 +46,10 @@ else
 
 });
 
+}
+
+
+function login_validation(){
 document.getElementById('login').addEventListener('click', e =>{
   let mail = document.forms["myForm"]["email"].value;
   let pwrd = document.forms["myForm"]["password"].value;
@@ -87,7 +94,9 @@ else
 
 });
 
+}
 
+function search_books(){
 document.getElementById('searchBooks').addEventListener('click', e =>{
   let search = document.getElementById('search').value
   console.log(search);
@@ -113,6 +122,7 @@ document.getElementById('searchBooks').addEventListener('click', e =>{
   // event.preventDefault();
   return false;
 });
+}
 
 function bookdetails(isbn)
 {
@@ -172,6 +182,7 @@ function review(isbn){
   }
 }
 
+// });
 // document.addEventListener('submit', e =>{
 //   let mail = document.forms["myForm"]["email"].value;
 //   let pwrd = document.forms["myForm"]["password"].value;
