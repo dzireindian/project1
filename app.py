@@ -219,8 +219,8 @@ def content(row):
     for r in row:
         print(type(r.isbn))
         html += '''<tr>
-          <td><a onclick="bookdetails('''+str(r.isbn)+''')">'''+str(r.isbn)+'''</a></td>
-          <td><a onclick="bookdetails('''+str(r.isbn)+''')">'''+str(r.title)+'''</a></td>
+          <td><a onclick="bookdetails('''+"'"+str(r.isbn)+"'"+''')">'''+str(r.isbn)+'''</a></td>
+          <td><a onclick="bookdetails('''+"'"+str(r.isbn)+"'"+''')">'''+str(r.title)+'''</a></td>
         </tr>'''
 
     html += '''</tbody>
@@ -247,9 +247,9 @@ def searchtest():
 def booksearch(isbn):
     if 'email' in session:
         print('length of isbn',len(isbn))
-        if len(isbn)!=10:
+        while len(isbn)<10:
             isbn = "0"+isbn
-            booksearch(isbn)
+            # booksearch(isbn)
         print("isbn = ",isbn)
         db = scoped_session(sessionmaker(bind=engine))
         html = ''

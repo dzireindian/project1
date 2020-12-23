@@ -123,11 +123,8 @@ function bookdetails(isbn)
 {
   console.log("isbn = "+isbn);
   let search = isbn.toString();
-  // if (search.length != 10){
-  //   while(search.length == 10)
-  //   {
-  //     search = "0"+search;
-  //   }
+  // if (search.length <= 7){
+  //   search = parseInt( search, 8);
   // }
   console.log("isbn after = "+search);
   let request = new XMLHttpRequest();
